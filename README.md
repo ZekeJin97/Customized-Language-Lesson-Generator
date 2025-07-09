@@ -107,30 +107,17 @@ linguapersonal/
  - Custom lesson generation
  - Vocabulary matching quiz
  - Fill-in-the-blank quiz
- 
- Dark theme UI
- 
- Accent-tolerant scoring
+
 
 # Phase 2 (Next Features)
 
- Multiple choice questions
- 
- Audio pronunciation (text-to-speech)
- 
- Progress tracking & user accounts
- 
- Lesson history and favorites
- 
- Difficulty levels (beginner/intermediate/advanced)
+ - More quiz types
+ - Audio pronunciation (tts)
+ - Difficulty levels (beginner/intermediate/advanced)
 
 # Phase 3 (Advanced)
 
- Multiple language support (French, German, Italian)
- 
- Spaced repetition algorithm
- 
- Community sharing of lessons
- 
- Mobile app (React Native)
- Voice recognition for pronunciation
+ - Progress tracking & user accounts
+ - Lesson history and favorites
+ - Spaced repetition algorithm
+ - Voice recognition for pronunciation
