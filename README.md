@@ -31,3 +31,33 @@ Create `.env` in the backend directory:
 
 ```env
 OPENAI_API_KEY=your_openai_api_key_here
+```
+
+## Run the Application
+ 
+# Terminal 1: Start backend (from backend/)
+```
+python main.py
+```
+
+# or
+```
+uvicorn main:app --reload
+```
+
+# Terminal 2: Start frontend (from frontend/)
+```
+npm run dev
+```
+
+##📱 How to Use
+
+Enter a Topic: Type what you want to learn (e.g., "ordering coffee", "at the airport")
+
+Review Lesson: Study the vocabulary and grammar notes
+
+Take Quizzes: Choose between vocabulary matching or fill-in-the-blank
+
+Get Feedback: See immediate results with correct answers
+
+Repeat: Generate new lessons on any topic
