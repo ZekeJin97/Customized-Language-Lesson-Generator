@@ -35,18 +35,18 @@ OPENAI_API_KEY=your_openai_api_key_here
 
 ## Run the Application
  
-# Terminal 1: Start backend (from backend/)
-```
+### Terminal 1: Start backend (from backend/)
+```bash
 python main.py
 ```
 
 # or
-```
+```bash
 uvicorn main:app --reload
 ```
 
-# Terminal 2: Start frontend (from frontend/)
-```
+### Terminal 2: Start frontend (from frontend/)
+```bash
 npm run dev
 ```
 
