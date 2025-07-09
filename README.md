@@ -121,3 +121,4 @@ linguapersonal/
  - Lesson history and favorites
  - Spaced repetition algorithm
  - Voice recognition for pronunciation
+ - Gamification
