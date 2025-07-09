@@ -1,6 +1,6 @@
 # 🧠 LinguaPersonal
 
-A personalized language learning app that generates custom Spanish lessons and quizzes from user prompts using OpenAI's GPT-4. Think Duolingo — but actually gives a damn about your interests.
+A personalized language learning app that generates custom Spanish lessons and quizzes from user prompts using OpenAI's GPT-4. Built with ❤️ for language learners who want personalized content that actually matters to them.
 
 ## 🚀 Features
 
