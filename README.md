@@ -50,7 +50,7 @@ uvicorn main:app --reload
 npm run dev
 ```
 
-##📱 How to Use
+## 📱 How to Use
 
 Enter a Topic: Type what you want to learn (e.g., "ordering coffee", "at the airport")
 
