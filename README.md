@@ -109,13 +109,13 @@ linguapersonal/
  - Fill-in-the-blank quiz
 
 
-# Phase 2 (Next Features)
+## Phase 2 (Next Features)
  - DevOp
  - More quiz types
  - Audio pronunciation (tts)
  - Difficulty levels (beginner/intermediate/advanced)
 
-# Phase 3 (Advanced)
+## Phase 3 (Advanced)
 
  - Progress tracking & user accounts
  - Lesson history and favorites
