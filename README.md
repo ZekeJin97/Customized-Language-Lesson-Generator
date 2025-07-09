@@ -4,19 +4,20 @@ A personalized language learning app that generates custom Spanish lessons and q
 
 ## 🚀 Features
 
-🎯 Personalized Learning: Input any topic and get a full Spanish lesson
-📖 Smart Vocabulary: AI expands beyond your prompt to include contextual words
-📝 Grammar Context: Relevant grammar notes tailored to your lesson topic
+- 🎯 Personalized Learning: Input any topic and get a full Spanish lesson
+- 📖 Smart Vocabulary: AI expands beyond your prompt to include contextual words
+- 📝 Grammar Context: Relevant grammar notes tailored to your lesson topic
 
 🧩 Interactive Quizzes:
 
-Vocabulary matching (English → Spanish)
-Fill-in-the-blank exercises
+- Vocabulary matching (English → Spanish)
+- Fill-in-the-blank exercises
 
 
-🌙 Dark Theme: Easy-on-the-eyes interface for extended learning
-⚡ Real-time Feedback: Instant scoring with accent-mark tolerance
-🎨 Clean UI: Split-screen design with lesson content always visible
+### ✨ Bonus
+- 🌙 **Dark Theme** – save your retinas  
+- ⚡ **Real-Time Feedback** – instant scoring, accent-tolerant  
+- 🎨 **Clean UI** – split-screen design, lesson always visible  
 
 ## 🛠 Tech Stack
 
@@ -52,15 +53,11 @@ npm run dev
 
 ## 📱 How to Use
 
-Enter a Topic: Type what you want to learn (e.g., "ordering coffee", "at the airport")
-
-Review Lesson: Study the vocabulary and grammar notes
-
-Take Quizzes: Choose between vocabulary matching or fill-in-the-blank
-
-Get Feedback: See immediate results with correct answers
-
-Repeat: Generate new lessons on any topic
+- Enter a Topic: Type what you want to learn (e.g., "ordering coffee", "at the airport")
+- Review Lesson: Study the vocabulary and grammar notes
+- Take Quizzes: Choose between vocabulary matching or fill-in-the-blank
+- Get Feedback: See immediate results with correct answers
+- Repeat: Generate new lessons on any topic
 
 # 🏗️ Architecture
 
@@ -102,3 +99,38 @@ linguapersonal/
 │   └── .env                          # Environment variables
 └── README.md
 ```
+
+# 🔮 Roadmap
+
+## Phase 1 (Current MVP) ✅
+
+ - Custom lesson generation
+ - Vocabulary matching quiz
+ - Fill-in-the-blank quiz
+ 
+ Dark theme UI
+ 
+ Accent-tolerant scoring
+
+# Phase 2 (Next Features)
+
+ Multiple choice questions
+ 
+ Audio pronunciation (text-to-speech)
+ 
+ Progress tracking & user accounts
+ 
+ Lesson history and favorites
+ 
+ Difficulty levels (beginner/intermediate/advanced)
+
+# Phase 3 (Advanced)
+
+ Multiple language support (French, German, Italian)
+ 
+ Spaced repetition algorithm
+ 
+ Community sharing of lessons
+ 
+ Mobile app (React Native)
+ Voice recognition for pronunciation
