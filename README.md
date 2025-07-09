@@ -110,7 +110,7 @@ linguapersonal/
 
 
 # Phase 2 (Next Features)
-
+ - DevOp
  - More quiz types
  - Audio pronunciation (tts)
  - Difficulty levels (beginner/intermediate/advanced)
