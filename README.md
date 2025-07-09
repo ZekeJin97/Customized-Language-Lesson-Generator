@@ -40,7 +40,7 @@ OPENAI_API_KEY=your_openai_api_key_here
 python main.py
 ```
 
-# or
+### or
 ```bash
 uvicorn main:app --reload
 ```
@@ -61,3 +61,44 @@ Take Quizzes: Choose between vocabulary matching or fill-in-the-blank
 Get Feedback: See immediate results with correct answers
 
 Repeat: Generate new lessons on any topic
+
+# 🏗️ Architecture
+
+```
+
+┌─────────────────┐    HTTP     ┌──────────────────┐    OpenAI API    ┌─────────────┐
+│                 │   Requests  │                  │     Requests     │             │
+│  Next.js App    │ ──────────► │   FastAPI        │ ──────────────► │   GPT-4     │
+│  (Frontend)     │             │   (Backend)      │                  │             │
+│                 │ ◄────────── │                  │ ◄────────────── │             │
+└─────────────────┘   JSON      └──────────────────┘    JSON         └─────────────┘
+```
+
+# 📂 Project Structure
+
+```
+linguapersonal/
+├── frontend/
+│   ├── src/
+│   │   ├── app/
+│   │   │   └── page.tsx              # Main app component
+│   │   ├── components/
+│   │   │   ├── LessonInput.tsx       # Topic input screen
+│   │   │   ├── VocabularyDisplay.tsx # Vocab + grammar display
+│   │   │   ├── QuizSelector.tsx      # Quiz type selector
+│   │   │   ├── VocabQuiz.tsx         # Vocabulary matching quiz
+│   │   │   └── FillBlankQuiz.tsx     # Fill-in-the-blank quiz
+│   │   ├── types/
+│   │   │   └── lesson.ts             # TypeScript interfaces
+│   │   ├── services/
+│   │   │   └── lessonService.ts      # API calls
+│   │   └── utils/
+│   │       └── textUtils.ts          # Text normalization
+│   ├── package.json
+│   └── tailwind.config.js
+├── backend/
+│   ├── main.py                       # FastAPI app + routes
+│   ├── requirements.txt
+│   └── .env                          # Environment variables
+└── README.md
+```
