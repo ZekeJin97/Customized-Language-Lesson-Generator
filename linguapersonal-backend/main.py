@@ -1,134 +1,104 @@
-import os, json, uuid, tempfile
-from typing import List, Dict
-from fastapi import FastAPI, HTTPException, Request
+import os
+import logging
+import json
+from typing import List, Dict, Any
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-import spacy
-from gtts import gTTS
+from pydantic import BaseModel
 from dotenv import load_dotenv
-from openai import OpenAI
+import httpx
 
-# ── Init ──────────────────────────────────────────────────────────────────────
+# ─── Setup ──────────────────────────────────────────────
 load_dotenv()
-client = OpenAI()
-nlp = spacy.load("en_core_web_sm")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
 
-app = FastAPI(title="LinguaPersonal API", version="2.1.1-stable")
+app = FastAPI(title="LinguaPersonal API", version="2.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # open for dev, lock in prod
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
-def detect_topic(text: str) -> str:
-    doc = nlp(text.lower())
-    ents = {e.label_: e.text for e in doc.ents}
-    if ents.get("ORG"): return ents["ORG"]
-    if ents.get("GPE"): return ents["GPE"]
-    return max(doc.noun_chunks, key=len).text if doc.noun_chunks else "general"
+# ─── Models ─────────────────────────────────────────────
+class LessonRequest(BaseModel):
+    user_prompt: str
+    target_lang: str
+    native_lang: str
 
-def estimate_level(text: str) -> str:
-    toks = [t for t in nlp(text) if t.is_alpha]
-    avg = sum(len(t.text) for t in toks) / max(1, len(toks))
-    return "advanced" if avg > 6 else "intermediate" if avg > 4 else "beginner"
+# ─── Core Function ──────────────────────────────────────
+async def fetch_lesson_from_openai(prompt: str, target_lang: str, native_lang: str) -> Dict[str, Any]:
+    system_prompt = f"""
+You are a helpful Spanish teacher AI. Create a comprehensive lesson based on the user's topic.
 
-def tts(words: str, lang: str) -> str:
-    path = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4()}.mp3")
-    gTTS(text=words, lang=lang, slow=False).save(path)
-    return path
+EXPAND beyond the user's exact words to include:
+- Related vocabulary that would naturally come up in this situation
+- Common phrases and expressions
+- Practical words someone would actually need
 
-# ── Health ─────────────────────────────────────────────────────────────────────
-@app.get("/version")
-def version():
-    return {"version": "2.1.2-stable"}
+For the topic provided, include 6-8 vocabulary items that cover the real-world scenario.
 
-# ── Main Endpoint ─────────────────────────────────────────────────────────────
-@app.post("/generate-lesson")
-async def generate_lesson(req: Request):
-    body = await req.json()
-    print("🔥 payload:", body)
+Return ONLY a JSON object with this exact format:
 
-    user_prompt = body.get("user_prompt")
-    target_lang = body.get("target_lang", "es")
-    native_lang = body.get("native_lang", "en")
+{{
+  "vocabulary": [{{"native": "...", "target": "..."}}],
+  "grammar_notes": "...",
+  "quiz": {{
+    "vocab_matching": [{{"native": "...", "target": "..."}}],
+    "mini_translations": [{{"native": "...", "target": "..."}}]
+  }}
+}}
 
-    if not user_prompt:
-        raise HTTPException(400, "Missing user_prompt")
+Rules:
+- Translate from '{native_lang}' to '{target_lang}'
+- Include 6-8 vocabulary items that go beyond just the user's prompt words
+- Add realistic phrases someone would use in this situation
+- Make mini_translations practical and conversational
+- Do NOT just break down the user's prompt - expand the vocabulary meaningfully
+"""
 
-    topic = detect_topic(user_prompt)
-    level = estimate_level(user_prompt)
+    payload = {
+        "model": "gpt-4",
+        "temperature": 0.8,
+        "messages": [
+            {"role": "system", "content": system_prompt.strip()},
+            {"role": "user", "content": prompt.strip()}
+        ]
+    }
 
-    system_prompt = (
-        "You are a Spanish language-teaching expert.  "
-        "Generate a JSON lesson with:\n"
-        "• vocabulary: list of 8–10 items using ONLY keys 'native' and 'target'\n"
-        "• grammar_notes: a short explanation (≤100 words)\n"
-        "• quiz: contains two sections: vocab_matching and mini_translations\n"
-        "All grammar explanations should be in English. Avoid Spanish unless translating."
-        " Output ONLY raw JSON, no markdown, no comments."
-    )
-
-    chat = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        temperature=0.7,
-    )
-
-    raw = chat.choices[0].message.content
-    print("🧠 LLM raw:", raw)
+    headers = {
+        "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+        "Content-Type": "application/json"
+    }
 
     try:
-        data = json.loads(raw)
-
-        # Handle vocab dict or list
-        if isinstance(data["vocabulary"], dict):
-            data["vocabulary"] = [
-                {"native": k, "target": v} for k, v in data["vocabulary"].items()
-            ]
-        elif isinstance(data["vocabulary"], list):
-            vocab = []
-            for item in data["vocabulary"]:
-                if "native" in item and "target" in item:
-                    vocab.append(item)
-                elif "English" in item and "Translation" in item:
-                    vocab.append({
-                        "native": item["English"],
-                        "target": item["Translation"]
-                    })
-                else:
-                    raise ValueError(f"Invalid vocab format: {item}")
-            data["vocabulary"] = vocab
-        else:
-            raise ValueError("Vocab must be list or dict")
-
+        timeout = httpx.Timeout(30.0)
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            logger.info("INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions \"HTTP/1.1 200 OK\"")
+            response = await client.post("https://api.openai.com/v1/chat/completions", json=payload, headers=headers)
+            response.raise_for_status()
+            content = response.json()
+            raw_json = json.loads(content["choices"][0]["message"]["content"])
+            return raw_json
+    except httpx.ReadTimeout:
+        logger.error("⏰ Timeout: OpenAI API took too long to respond.")
+        raise HTTPException(status_code=504, detail="OpenAI timeout.")
     except Exception as e:
-        print("🚨 Error while parsing LLM output:", e)
-        raise HTTPException(500, "LLM returned invalid JSON or unexpected format")
+        logger.exception("💥 Unexpected error while fetching lesson")
+        raise HTTPException(status_code=500, detail=str(e))
 
-    # Gracefully fallback if keys are weird
-    grammar_notes = data.get("grammar_notes") or data.get("grammar_note") or ""
-    quiz = data.get("quiz") or {}
-
-    vocab_targets = [v["target"] for v in data["vocabulary"]]
-    audio_url = tts(", ".join(vocab_targets), target_lang)
-
-    return JSONResponse(content={
-        "topic":         topic,
-        "difficulty":    level,
-        "vocabulary":    data["vocabulary"],
-        "grammar_notes": grammar_notes,
-        "quiz":          quiz,
-        "audio_url":     audio_url,
-    })
-
-# ── Run Dev ───────────────────────────────────────────────────────────────────
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+# ─── Endpoint ───────────────────────────────────────────
+@app.post("/generate-lesson")
+async def generate_lesson(req: LessonRequest):
+    logger.info("🔥 payload: %s", req.dict())
+    try:
+        lesson = await fetch_lesson_from_openai(req.user_prompt, req.target_lang, req.native_lang)
+        logger.info("🧠 LLM raw: %s", json.dumps(lesson, indent=2, ensure_ascii=False))
+        return lesson
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception:
+        raise HTTPException(status_code=500, detail="Lesson generation failed.")
