@@ -19,4 +19,4 @@ export interface Lesson {
     quiz: Quiz;
 }
 
-export type CurrentStep = "input" | "lesson" | "vocab_quiz" | "fillblank_quiz";
+export type CurrentStep = "input" | "lesson" | "vocab_quiz" | "fillblank_quiz" | "reverse_quiz";

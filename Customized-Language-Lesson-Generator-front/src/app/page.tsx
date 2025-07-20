@@ -7,6 +7,7 @@ import VocabularyDisplay from '@/components/VocabularyDisplay';
 import QuizSelector from '@/components/QuizSelector';
 import VocabQuiz from '@/components/VocabQuiz';
 import FillBlankQuiz from '@/components/FillBlankQuiz';
+import ReverseQuiz from '@/components/ReverseQuiz';
 
 export default function LinguaQuizApp() {
     const [prompt, setPrompt] = useState<string>("");
@@ -74,6 +75,7 @@ export default function LinguaQuizApp() {
                         <QuizSelector
                             onStartVocabQuiz={() => setCurrentStep("vocab_quiz")}
                             onStartFillBlankQuiz={() => setCurrentStep("fillblank_quiz")}
+                            onStartReverseQuiz={() => setCurrentStep("reverse_quiz")}
                         />
                     )}
 
@@ -87,6 +89,14 @@ export default function LinguaQuizApp() {
 
                     {currentStep === "fillblank_quiz" && (
                         <FillBlankQuiz
+                            lesson={lesson}
+                            onBackToMenu={() => setCurrentStep("lesson")}
+                            onStartReverseQuiz={() => setCurrentStep("reverse_quiz")}
+                        />
+                    )}
+
+                    {currentStep === "reverse_quiz" && (
+                        <ReverseQuiz
                             lesson={lesson}
                             onBackToMenu={() => setCurrentStep("lesson")}
                             onStartVocabQuiz={() => setCurrentStep("vocab_quiz")}
