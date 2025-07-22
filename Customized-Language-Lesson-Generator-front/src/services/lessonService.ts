@@ -1,7 +1,7 @@
 import { Lesson } from '@/types/lesson';
 
 export async function generateLesson(prompt: string): Promise<Lesson> {
-    const res = await fetch("http://localhost:8000/generate-lesson", {
+    const res = await fetch("http://3.147.58.5:8000/generate-lesson", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
