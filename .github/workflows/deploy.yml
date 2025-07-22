@@ -18,13 +18,13 @@ jobs:
       working-directory: ./Customized-Language-Lesson-Generator-front
       run: npm install
       
-    - name: Build
+    - name: Build and export
       working-directory: ./Customized-Language-Lesson-Generator-front
       run: npm run build
       
     - name: Deploy to S3
       run: |
-        aws s3 sync Customized-Language-Lesson-Generator-front/build/ s3://${{ secrets.AWS_S3_BUCKET }} --delete
+        aws s3 sync ./Customized-Language-Lesson-Generator-front/out/ s3://${{ secrets.AWS_S3_BUCKET }} --delete
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
