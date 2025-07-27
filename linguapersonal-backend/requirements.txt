@@ -4,3 +4,9 @@ openai
 spacy
 gTTS
 python-dotenv
+httpx
+pydantic[email]
+psycopg2-binary
+sqlalchemy
+bcrypt
+pyjwt
