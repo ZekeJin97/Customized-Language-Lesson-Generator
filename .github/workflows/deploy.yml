@@ -1,10 +1,10 @@
-name: Deploy to S3
+name: Deploy Frontend & Backend
 on:
   push:
     branches: [ main ]
 
 jobs:
-  deploy:
+  deploy-frontend:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -29,3 +29,33 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: us-east-1
+
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
+        
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+      
+    - name: Build and push Docker image
+      working-directory: ./linguapersonal-backend
+      run: |
+        docker build -t linguapersonal-backend .
+        docker tag linguapersonal-backend:latest 842676004746.dkr.ecr.us-east-2.amazonaws.com/linguapersonal-backend:latest
+        docker push 842676004746.dkr.ecr.us-east-2.amazonaws.com/linguapersonal-backend:latest
+        
+    - name: Update ECS service
+      run: |
+        aws ecs update-service --cluster linguapersonal-cluster --service linguapersonal-backend-task-service-vc5ef0pu --force-new-deployment --region us-east-2
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
