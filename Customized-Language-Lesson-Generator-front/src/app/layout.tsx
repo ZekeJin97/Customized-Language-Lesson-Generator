@@ -14,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LinguaPersonal - AI Language Learning",
-  description: "Learn languages with AI-powered personalized lessons",
+  title: "LinguaPersonal - AI Spanish Learning",
+  description: "Learn Spanish with AI-powered personalized lessons and interactive quizzes",
+  keywords: "Spanish learning, AI tutor, language learning, vocabulary quiz, grammar practice",
 };
 
 export default function RootLayout({
@@ -25,6 +26,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/favicon.ico" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#8B5CF6" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

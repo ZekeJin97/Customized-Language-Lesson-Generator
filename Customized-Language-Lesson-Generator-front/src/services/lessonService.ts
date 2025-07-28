@@ -1,7 +1,7 @@
 import { Lesson } from '@/types/lesson';
 
 // Update this to your current backend URL
-const API_BASE_URL = 'http://3.14.82.39:8000';
+const API_BASE_URL = 'http://3.144.210.134:8000';
 
 // Authentication types
 export interface AuthResponse {
