@@ -258,7 +258,12 @@ def submit_quiz_attempt(attempt: QuizAttempt, current_user: User = Depends(get_c
     ).first()
 
     if not progress:
-        progress = UserProgress(user_id=current_user.id, language=session.language)
+        progress = UserProgress(
+            user_id=current_user.id,
+            language=session.language,
+            total_questions=0,
+            correct_answers=0
+        )
         db.add(progress)
 
     progress.total_questions += 1
