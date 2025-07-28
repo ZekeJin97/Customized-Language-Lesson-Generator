@@ -43,20 +43,24 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-black">
+      <div className="max-w-md w-full space-y-8 p-8 bg-gray-900 rounded-xl shadow-2xl border border-gray-700">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">
+          <div className="mb-4">
+            <h1 className="text-3xl font-bold text-purple-400">LinguaPersonal</h1>
+            <div className="w-16 h-1 bg-purple-400 mx-auto mt-2 rounded"></div>
+          </div>
+          <h2 className="text-2xl font-bold text-white">
             {isLogin ? 'Sign In' : 'Create Account'}
           </h2>
-          <p className="mt-2 text-gray-600">
-            {isLogin ? 'Welcome back to LinguaPersonal' : 'Start your language learning journey'}
+          <p className="mt-2 text-gray-400">
+            {isLogin ? 'Welcome back to LinguaPersonal' : 'Start your Spanish learning journey'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
               Email Address
             </label>
             <input
@@ -66,13 +70,13 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
               required
               value={credentials.email}
               onChange={handleInputChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               placeholder="your@email.com"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
               Password
             </label>
             <input
@@ -82,13 +86,13 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
               required
               value={credentials.password}
               onChange={handleInputChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               placeholder="••••••••"
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+            <div className="bg-red-900/50 border border-red-600 text-red-300 px-4 py-3 rounded-lg">
               {error}
             </div>
           )}
@@ -96,9 +100,16 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900"
           >
-            {isLoading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
+            {isLoading ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                Processing...
+              </div>
+            ) : (
+              isLogin ? 'Sign In' : 'Create Account'
+            )}
           </button>
         </form>
 
@@ -109,7 +120,7 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
               setError('');
               setCredentials({ email: '', password: '' });
             }}
-            className="text-indigo-600 hover:text-indigo-500 text-sm font-medium"
+            className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
           >
             {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
           </button>

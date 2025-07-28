@@ -257,6 +257,8 @@ async def login_fast(user_data: UserLogin, db: Session = Depends(get_db)):
 
 
 # ─── Optimized OpenAI Function ─────────────────────────
+# Replace your fetch_lesson_from_openai function with this updated version:
+
 async def fetch_lesson_from_openai(prompt: str, target_lang: str, native_lang: str) -> Dict[str, Any]:
     system_prompt = f"""
 You are a helpful Spanish teacher AI. Create a comprehensive lesson based on the user's topic.
@@ -275,22 +277,31 @@ Return ONLY a JSON object with this exact format:
   "grammar_notes": "...",
   "quiz": {{
     "vocab_matching": [{{"native": "...", "target": "..."}}],
-    "mini_translations": [{{"native": "...", "target": "..."}}]
+    "mini_translations": [
+      {{"native": "...", "target": "..."}},
+      {{"native": "...", "target": "..."}},
+      {{"native": "...", "target": "..."}},
+      {{"native": "...", "target": "..."}},
+      {{"native": "...", "target": "..."}},
+      {{"native": "...", "target": "..."}}
+    ]
   }}
 }}
 
-Rules:
+IMPORTANT REQUIREMENTS:
+- Include exactly 6-8 vocabulary items in "vocabulary"
+- Include exactly 6-8 items in "vocab_matching" (same as vocabulary)
+- Include exactly 6 items in "mini_translations" (complete sentences)
+- Make mini_translations practical, conversational sentences that use the vocabulary
 - Translate from '{native_lang}' to '{target_lang}'
-- Include 6-8 vocabulary items that go beyond just the user's prompt words
-- Add realistic phrases someone would use in this situation
-- Make mini_translations practical and conversational
 - Do NOT just break down the user's prompt - expand the vocabulary meaningfully
+- Each mini_translation should be a complete, useful sentence someone would actually say
 """
 
     payload = {
         "model": "gpt-3.5-turbo",  # Changed from gpt-4 to gpt-3.5-turbo (much faster)
-        "temperature": 0.7,  # Reduced from 0.8
-        "max_tokens": 1500,  # Added token limit for faster response
+        "temperature": 0.7,        # Reduced from 0.8
+        "max_tokens": 2000,        # Increased from 1500 to allow more content
         "messages": [
             {"role": "system", "content": system_prompt.strip()},
             {"role": "user", "content": prompt.strip()}
@@ -319,7 +330,6 @@ Rules:
     except Exception as e:
         logger.exception("💥 Unexpected error while fetching lesson")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 # ─── Updated Lesson Endpoint ───────────────────────────
 @app.post("/generate-lesson")
