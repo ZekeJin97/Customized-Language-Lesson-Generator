@@ -78,7 +78,7 @@ export default function MistakesReview({ onBackToMenu }: MistakesReviewProps) {
                     <div className="text-6xl mb-4">🎉</div>
                     <h2 className="text-2xl font-bold text-green-400 mb-2">Perfect Score!</h2>
                     <p className="text-gray-300 mb-6">
-                        You haven't made any mistakes yet. Keep up the great work!
+                        You have not made any mistakes yet. Keep up the great work!
                     </p>
                     <button
                         onClick={onBackToMenu}
