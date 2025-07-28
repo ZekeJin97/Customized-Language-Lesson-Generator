@@ -1,12 +1,16 @@
-// REPLACE: src/components/QuizSelector.tsx
-
 interface QuizSelectorProps {
     onStartVocabQuiz: () => void;
     onStartFillBlankQuiz: () => void;
     onStartReverseQuiz: () => void;
+    onStartMistakesReview: () => void; // Added new prop
 }
 
-export default function QuizSelector({ onStartVocabQuiz, onStartFillBlankQuiz, onStartReverseQuiz }: QuizSelectorProps) {
+export default function QuizSelector({
+    onStartVocabQuiz,
+    onStartFillBlankQuiz,
+    onStartReverseQuiz,
+    onStartMistakesReview
+}: QuizSelectorProps) {
     return (
         <div className="bg-gray-900 border border-gray-700 rounded-lg shadow-lg p-6">
             <div className="text-center">
@@ -33,6 +37,17 @@ export default function QuizSelector({ onStartVocabQuiz, onStartFillBlankQuiz, o
                         📝 Fill in the Blanks
                         <p className="text-sm text-blue-200 mt-1">Complete Spanish sentences</p>
                     </button>
+
+                    {/* New Mistakes Review Button */}
+                    <div className="border-t border-gray-600 pt-4 mt-6">
+                        <button
+                            onClick={onStartMistakesReview}
+                            className="w-full bg-red-600 hover:bg-red-700 text-white py-4 px-6 rounded-lg font-semibold transition-colors"
+                        >
+                            📋 Review Mistakes
+                            <p className="text-sm text-red-200 mt-1">Practice your incorrect answers</p>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
