@@ -256,7 +256,7 @@ async def login_fast(user_data: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Login failed")
 
 
-# ─── Core Function (Unchanged) ──────────────────────────
+# ─── Optimized OpenAI Function ─────────────────────────
 async def fetch_lesson_from_openai(prompt: str, target_lang: str, native_lang: str) -> Dict[str, Any]:
     system_prompt = f"""
 You are a helpful Spanish teacher AI. Create a comprehensive lesson based on the user's topic.
@@ -288,8 +288,9 @@ Rules:
 """
 
     payload = {
-        "model": "gpt-4",
-        "temperature": 0.8,
+        "model": "gpt-3.5-turbo",  # Changed from gpt-4 to gpt-3.5-turbo (much faster)
+        "temperature": 0.7,  # Reduced from 0.8
+        "max_tokens": 1500,  # Added token limit for faster response
         "messages": [
             {"role": "system", "content": system_prompt.strip()},
             {"role": "user", "content": prompt.strip()}
@@ -302,17 +303,19 @@ Rules:
     }
 
     try:
-        timeout = httpx.Timeout(30.0)
+        # Increased timeout from 30 to 90 seconds
+        timeout = httpx.Timeout(90.0)
         async with httpx.AsyncClient(timeout=timeout) as client:
-            logger.info("INFO:httpx:HTTP Request: POST https://api.openai.com/v1/chat/completions \"HTTP/1.1 200 OK\"")
+            logger.info("🤖 Calling OpenAI API (90s timeout)...")
             response = await client.post("https://api.openai.com/v1/chat/completions", json=payload, headers=headers)
             response.raise_for_status()
             content = response.json()
             raw_json = json.loads(content["choices"][0]["message"]["content"])
+            logger.info("✅ OpenAI API call successful")
             return raw_json
     except httpx.ReadTimeout:
-        logger.error("⏰ Timeout: OpenAI API took too long to respond.")
-        raise HTTPException(status_code=504, detail="OpenAI timeout.")
+        logger.error("⏰ Timeout: OpenAI API took longer than 90 seconds.")
+        raise HTTPException(status_code=504, detail="OpenAI API is taking too long. Please try again.")
     except Exception as e:
         logger.exception("💥 Unexpected error while fetching lesson")
         raise HTTPException(status_code=500, detail=str(e))
@@ -334,11 +337,13 @@ async def generate_lesson(req: LessonRequest, current_user: User = Depends(get_c
         db.commit()
         db.refresh(session)
 
+        # Call OpenAI - if it fails, it fails
         lesson = await fetch_lesson_from_openai(req.user_prompt, req.target_lang, req.native_lang)
         lesson["session_id"] = session.id  # Add session ID to response
 
         logger.info("🧠 LLM raw: %s", json.dumps(lesson, indent=2, ensure_ascii=False))
         return lesson
+
     except HTTPException as http_exc:
         raise http_exc
     except Exception:
