@@ -43,7 +43,7 @@ export default function VocabularyDisplay({ lesson }: VocabularyDisplayProps) {
                 <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 flex justify-between items-start">
                     <p className="text-gray-300 text-sm flex-1 leading-relaxed">{lesson.grammar_notes}</p>
                     <button
-                        onClick={() => speakText(lesson.grammar_notes)}
+                        onClick={() => speakText(lesson.grammar_notes, 'en-US')}
                         className="text-blue-400 hover:text-blue-300 text-lg ml-3 transition-colors p-1 rounded hover:bg-gray-700"
                         title="Read grammar notes"
                     >

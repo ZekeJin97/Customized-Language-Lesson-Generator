@@ -121,9 +121,8 @@ export default function MistakesReview({ onBackToMenu }: MistakesReviewProps) {
                             <p className="text-lg text-white font-medium">{currentMistake.question_text}</p>
                             <button
                                 onClick={() => {
-                                    // Determine language based on content
-                                    const isSpanish = /[ñáéíóúü]/.test(currentMistake.question_text);
-                                    speakText(currentMistake.question_text, isSpanish ? 'es-ES' : 'en-US');
+                                    // Grammar notes are in English
+                                    speakText(currentMistake.question_text, 'en-US');
                                 }}
                                 className="text-blue-400 hover:text-blue-300 transition-colors"
                                 title="Pronounce question"
@@ -144,8 +143,8 @@ export default function MistakesReview({ onBackToMenu }: MistakesReviewProps) {
                                 {currentMistake.user_answer && (
                                     <button
                                         onClick={() => {
-                                            const isSpanish = /[ñáéíóúü]/.test(currentMistake.user_answer);
-                                            speakText(currentMistake.user_answer, isSpanish ? 'es-ES' : 'en-US');
+                                            // User answers are typically in Spanish
+                                            speakText(currentMistake.user_answer, 'es-ES');
                                         }}
                                         className="text-blue-400 hover:text-blue-300 transition-colors"
                                         title="Pronounce your answer"
@@ -165,8 +164,8 @@ export default function MistakesReview({ onBackToMenu }: MistakesReviewProps) {
                                 <p className="text-green-300 font-bold">{currentMistake.correct_answer}</p>
                                 <button
                                     onClick={() => {
-                                        const isSpanish = /[ñáéíóúü]/.test(currentMistake.correct_answer);
-                                        speakText(currentMistake.correct_answer, isSpanish ? 'es-ES' : 'en-US');
+                                        // Correct answers are in Spanish
+                                        speakText(currentMistake.correct_answer, 'es-ES');
                                     }}
                                     className="text-blue-400 hover:text-blue-300 transition-colors"
                                     title="Pronounce correct answer"
