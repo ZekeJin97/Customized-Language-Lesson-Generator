@@ -30,6 +30,14 @@ export interface UserProgress {
   last_studied: string;
 }
 
+export interface MistakeItem {
+  question_text: string;
+  user_answer: string;
+  correct_answer: string;
+  timestamp: string;
+  language: string;
+}
+
 // Token management
 export class AuthService {
   static getToken(): string | null {
@@ -166,7 +174,7 @@ export async function getUserProgress(): Promise<UserProgress[]> {
 }
 
 // Get user mistakes
-export async function getUserMistakes(language?: string): Promise<any[]> {
+export async function getUserMistakes(language?: string): Promise<MistakeItem[]> {
   const url = language
     ? `${API_BASE_URL}/user-mistakes?language=${encodeURIComponent(language)}`
     : `${API_BASE_URL}/user-mistakes`;
