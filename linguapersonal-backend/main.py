@@ -227,10 +227,11 @@ async def generate_lesson(req: LessonRequest, current_user: User = Depends(get_c
         raise HTTPException(status_code=500, detail="Lesson generation failed.")
 
 
-# ─── New Endpoints ──────────────────────────────────────
+# Fixed submit_quiz_attempt function - replace in main.py
+
 @app.post("/submit-quiz-attempt")
-async def submit_quiz_attempt(attempt: QuizAttempt, current_user: User = Depends(get_current_user),
-                              db: Session = Depends(get_db)):
+def submit_quiz_attempt(attempt: QuizAttempt, current_user: User = Depends(get_current_user),
+                        db: Session = Depends(get_db)):
     # Verify session belongs to user
     session = db.query(LearningSession).filter(
         LearningSession.id == attempt.session_id,
