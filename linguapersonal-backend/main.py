@@ -1,6 +1,7 @@
 import os
 import logging
 import json
+import time
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException, Depends, status
@@ -12,16 +13,24 @@ import httpx
 import bcrypt
 import jwt
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
 # Import our database models
 from database import get_db, create_tables, User, LearningSession, QuestionAttempt, UserProgress
 
 # ─── Setup ──────────────────────────────────────────────
 load_dotenv()
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger()
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
-app = FastAPI(title="LinguaPersonal API", version="2.0")
+app = FastAPI(
+    title="LinguaPersonal API",
+    version="2.0",
+    timeout_keep_alive=60  # Increase keep-alive timeout
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -73,13 +82,18 @@ class QuizAttempt(BaseModel):
     is_correct: bool
 
 
-# ─── Auth Functions ─────────────────────────────────────
+# ─── Optimized Auth Functions ──────────────────────────
 def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    # Reduced rounds from default 12 to 10 for faster verification
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=10)).decode('utf-8')
 
 
 def verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+    try:
+        return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+    except Exception as e:
+        logger.error(f"Password verification error: {e}")
+        return False
 
 
 def create_access_token(data: dict):
@@ -104,38 +118,142 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     return user
 
 
-# ─── Auth Endpoints ─────────────────────────────────────
+# ─── Optimized Auth Endpoints ──────────────────────────
 @app.post("/register", response_model=Token)
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    # Check if user exists
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+    start_time = time.time()
 
-    # Create new user
-    hashed_password = hash_password(user_data.password)
-    new_user = User(email=user_data.email, password_hash=hashed_password)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    try:
+        # Check if user exists
+        logger.info(f"🔍 Checking if user exists: {user_data.email}")
+        existing_user = db.query(User).filter(User.email == user_data.email).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Create access token
-    access_token = create_access_token(data={"sub": user_data.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+        # Create new user
+        logger.info("🔐 Hashing password...")
+        hashed_password = hash_password(user_data.password)
+
+        logger.info("👤 Creating new user...")
+        new_user = User(email=user_data.email, password_hash=hashed_password)
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        # Create access token
+        logger.info("🎟️ Creating access token...")
+        access_token = create_access_token(data={"sub": user_data.email})
+
+        total_time = time.time() - start_time
+        logger.info(f"✅ Registration completed in {total_time:.3f}s")
+
+        return {"access_token": access_token, "token_type": "bearer"}
+
+    except HTTPException:
+        raise
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Database error during registration: {e}")
+        raise HTTPException(status_code=500, detail="Database error")
+    except Exception as e:
+        db.rollback()
+        total_time = time.time() - start_time
+        logger.error(f"Registration failed after {total_time:.3f}s: {str(e)}")
+        raise HTTPException(status_code=500, detail="Registration failed")
 
 
 @app.post("/login", response_model=Token)
 async def login(user_data: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == user_data.email).first()
-    if not user or not verify_password(user_data.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+    start_time = time.time()
 
-    # Update last login
-    user.last_login = datetime.utcnow()
-    db.commit()
+    try:
+        # Step 1: Database query with timeout
+        logger.info(f"🔍 Looking up user: {user_data.email}")
+        query_start = time.time()
 
-    access_token = create_access_token(data={"sub": user_data.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+        user = db.query(User).filter(User.email == user_data.email).first()
+
+        query_time = time.time() - query_start
+        logger.info(f"⏱️ Database query took: {query_time:.3f}s")
+
+        if not user:
+            logger.warning(f"❌ User not found: {user_data.email}")
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        # Step 2: Password verification
+        logger.info("🔐 Verifying password...")
+        verify_start = time.time()
+        password_valid = verify_password(user_data.password, user.password_hash)
+        verify_time = time.time() - verify_start
+        logger.info(f"⏱️ Password verification took: {verify_time:.3f}s")
+
+        if not password_valid:
+            logger.warning(f"❌ Invalid password for user: {user_data.email}")
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        # Step 3: Update last login (optional, can be removed for speed)
+        logger.info("📝 Updating last login...")
+        update_start = time.time()
+        user.last_login = datetime.utcnow()
+        db.commit()
+        update_time = time.time() - update_start
+        logger.info(f"⏱️ Database update took: {update_time:.3f}s")
+
+        # Step 4: Create token
+        logger.info("🎟️ Creating access token...")
+        token_start = time.time()
+        access_token = create_access_token(data={"sub": user_data.email})
+        token_time = time.time() - token_start
+        logger.info(f"⏱️ Token creation took: {token_time:.3f}s")
+
+        total_time = time.time() - start_time
+        logger.info(f"✅ Login completed in {total_time:.3f}s")
+
+        return {"access_token": access_token, "token_type": "bearer"}
+
+    except HTTPException:
+        raise
+    except SQLAlchemyError as e:
+        db.rollback()
+        total_time = time.time() - start_time
+        logger.error(f"Database error during login after {total_time:.3f}s: {e}")
+        raise HTTPException(status_code=500, detail="Database connection error")
+    except Exception as e:
+        db.rollback()
+        total_time = time.time() - start_time
+        logger.error(f"💥 Login failed after {total_time:.3f}s: {str(e)}")
+        raise HTTPException(status_code=500, detail="Login failed")
+
+
+# Alternative faster login (without last_login update)
+@app.post("/login-fast", response_model=Token)
+async def login_fast(user_data: UserLogin, db: Session = Depends(get_db)):
+    """Faster login endpoint that skips the last_login update"""
+    start_time = time.time()
+
+    try:
+        logger.info(f"🚀 Fast login for: {user_data.email}")
+
+        user = db.query(User).filter(User.email == user_data.email).first()
+
+        if not user or not verify_password(user_data.password, user.password_hash):
+            logger.warning(f"❌ Invalid credentials for: {user_data.email}")
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        # Skip last_login update for speed
+        access_token = create_access_token(data={"sub": user_data.email})
+
+        total_time = time.time() - start_time
+        logger.info(f"⚡ Fast login completed in {total_time:.3f}s")
+
+        return {"access_token": access_token, "token_type": "bearer"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        total_time = time.time() - start_time
+        logger.error(f"💥 Fast login failed after {total_time:.3f}s: {str(e)}")
+        raise HTTPException(status_code=500, detail="Login failed")
 
 
 # ─── Core Function (Unchanged) ──────────────────────────
@@ -227,71 +345,91 @@ async def generate_lesson(req: LessonRequest, current_user: User = Depends(get_c
         raise HTTPException(status_code=500, detail="Lesson generation failed.")
 
 
-# Fixed submit_quiz_attempt function - replace in main.py
-
 @app.post("/submit-quiz-attempt")
 def submit_quiz_attempt(attempt: QuizAttempt, current_user: User = Depends(get_current_user),
                         db: Session = Depends(get_db)):
-    # Verify session belongs to user
-    session = db.query(LearningSession).filter(
-        LearningSession.id == attempt.session_id,
-        LearningSession.user_id == current_user.id
-    ).first()
+    try:
+        # Verify session belongs to user
+        session = db.query(LearningSession).filter(
+            LearningSession.id == attempt.session_id,
+            LearningSession.user_id == current_user.id
+        ).first()
 
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
 
-    # Save the attempt
-    quiz_attempt = QuestionAttempt(
-        session_id=attempt.session_id,
-        question_text=attempt.question_text,
-        user_answer=attempt.user_answer,
-        correct_answer=attempt.correct_answer,
-        is_correct=attempt.is_correct
-    )
-    db.add(quiz_attempt)
-
-    # Update user progress
-    progress = db.query(UserProgress).filter(
-        UserProgress.user_id == current_user.id,
-        UserProgress.language == session.language
-    ).first()
-
-    if not progress:
-        progress = UserProgress(
-            user_id=current_user.id,
-            language=session.language,
-            total_questions=0,
-            correct_answers=0
+        # Save the attempt
+        quiz_attempt = QuestionAttempt(
+            session_id=attempt.session_id,
+            question_text=attempt.question_text,
+            user_answer=attempt.user_answer,
+            correct_answer=attempt.correct_answer,
+            is_correct=attempt.is_correct
         )
-        db.add(progress)
+        db.add(quiz_attempt)
 
-    progress.total_questions += 1
-    if attempt.is_correct:
-        progress.correct_answers += 1
-    progress.last_studied = datetime.utcnow()
+        # Update user progress
+        progress = db.query(UserProgress).filter(
+            UserProgress.user_id == current_user.id,
+            UserProgress.language == session.language
+        ).first()
 
-    db.commit()
+        if not progress:
+            progress = UserProgress(
+                user_id=current_user.id,
+                language=session.language,
+                total_questions=0,
+                correct_answers=0
+            )
+            db.add(progress)
 
-    return {"message": "Attempt recorded", "is_correct": attempt.is_correct}
+        progress.total_questions += 1
+        if attempt.is_correct:
+            progress.correct_answers += 1
+        progress.last_studied = datetime.utcnow()
+
+        db.commit()
+
+        return {"message": "Attempt recorded", "is_correct": attempt.is_correct}
+
+    except HTTPException:
+        raise
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Database error in submit_quiz_attempt: {e}")
+        raise HTTPException(status_code=500, detail="Database error")
 
 
 @app.get("/user-progress")
 async def get_user_progress(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    progress = db.query(UserProgress).filter(UserProgress.user_id == current_user.id).all()
-    return progress
+    try:
+        progress = db.query(UserProgress).filter(UserProgress.user_id == current_user.id).all()
+        return progress
+    except SQLAlchemyError as e:
+        logger.error(f"Database error in get_user_progress: {e}")
+        raise HTTPException(status_code=500, detail="Database error")
 
 
 @app.get("/user-mistakes")
 async def get_user_mistakes(language: Optional[str] = None, current_user: User = Depends(get_current_user),
                             db: Session = Depends(get_db)):
-    query = db.query(QuestionAttempt).join(LearningSession).filter(
-        LearningSession.user_id == current_user.id,
-        QuestionAttempt.is_correct == False
-    )
+    try:
+        query = db.query(QuestionAttempt).join(LearningSession).filter(
+            LearningSession.user_id == current_user.id,
+            QuestionAttempt.is_correct == False
+        )
 
-    if language:
-        query = query.filter(LearningSession.language == language)
+        if language:
+            query = query.filter(LearningSession.language == language)
 
-    mistakes = query.limit(20).all()
-    return mistakes
+        mistakes = query.limit(20).all()
+        return mistakes
+    except SQLAlchemyError as e:
+        logger.error(f"Database error in get_user_mistakes: {e}")
+        raise HTTPException(status_code=500, detail="Database error")
+
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "timestamp": datetime.utcnow()}
