@@ -9,9 +9,14 @@ import VocabQuiz from '@/components/VocabQuiz';
 import FillBlankQuiz from '@/components/FillBlankQuiz';
 import ReverseQuiz from '@/components/ReverseQuiz';
 
+// Extended lesson type to include session_id
+interface LessonWithSession extends Lesson {
+    session_id: number;
+}
+
 export default function LinguaQuizApp() {
     const [prompt, setPrompt] = useState<string>("");
-    const [lesson, setLesson] = useState<Lesson | null>(null);
+    const [lesson, setLesson] = useState<LessonWithSession | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [currentStep, setCurrentStep] = useState<CurrentStep>("input");
@@ -23,11 +28,17 @@ export default function LinguaQuizApp() {
 
         try {
             const lessonData = await generateLesson(userPrompt);
-            setLesson(lessonData);
+            setLesson(lessonData as LessonWithSession);
             setCurrentStep("lesson");
         } catch (e) {
             console.error(e);
-            setError("Something went wrong. Check if your backend is running.");
+            if (e instanceof Error && e.message.includes('Authentication required')) {
+                setError("Please log in to generate lessons.");
+            } else if (e instanceof Error && e.message.includes('Session expired')) {
+                setError("Your session has expired. Please log in again.");
+            } else {
+                setError("Something went wrong. Please try again.");
+            }
         } finally {
             setLoading(false);
         }
@@ -43,27 +54,34 @@ export default function LinguaQuizApp() {
     // Input Screen
     if (!lesson) {
         return (
-            <LessonInput
-                onGenerateLesson={handleGenerateLesson}
-                loading={loading}
-                error={error}
-            />
+            <div className="min-h-screen bg-black">
+                <LessonInput
+                    onGenerateLesson={handleGenerateLesson}
+                    loading={loading}
+                    error={error}
+                />
+            </div>
         );
     }
 
     // Main Lesson Screen
     return (
-        <main className="min-h-screen p-4 bg-black">
-            <div className="max-w-4xl mx-auto">
+        <div className="min-h-screen bg-black">
+            <div className="max-w-4xl mx-auto p-4">
                 {/* Header */}
                 <div className="text-center mb-6">
                     <h1 className="text-3xl font-bold text-purple-400">📚 {prompt}</h1>
-                    <button
-                        onClick={reset}
-                        className="mt-2 text-purple-400 hover:text-purple-300 underline"
-                    >
-                        ← Start Over
-                    </button>
+                    <div className="flex justify-center items-center gap-4 mt-2">
+                        <button
+                            onClick={reset}
+                            className="text-purple-400 hover:text-purple-300 underline"
+                        >
+                            ← Start Over
+                        </button>
+                        <span className="text-gray-500 text-sm">
+                            Session ID: {lesson.session_id}
+                        </span>
+                    </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
@@ -82,6 +100,7 @@ export default function LinguaQuizApp() {
                     {currentStep === "vocab_quiz" && (
                         <VocabQuiz
                             lesson={lesson}
+                            sessionId={lesson.session_id}
                             onBackToMenu={() => setCurrentStep("lesson")}
                             onStartFillBlank={() => setCurrentStep("fillblank_quiz")}
                         />
@@ -90,6 +109,7 @@ export default function LinguaQuizApp() {
                     {currentStep === "fillblank_quiz" && (
                         <FillBlankQuiz
                             lesson={lesson}
+                            sessionId={lesson.session_id}
                             onBackToMenu={() => setCurrentStep("lesson")}
                             onStartReverseQuiz={() => setCurrentStep("reverse_quiz")}
                         />
@@ -98,12 +118,13 @@ export default function LinguaQuizApp() {
                     {currentStep === "reverse_quiz" && (
                         <ReverseQuiz
                             lesson={lesson}
+                            sessionId={lesson.session_id}
                             onBackToMenu={() => setCurrentStep("lesson")}
                             onStartVocabQuiz={() => setCurrentStep("vocab_quiz")}
                         />
                     )}
                 </div>
             </div>
-        </main>
+        </div>
     );
 }

@@ -1,6 +1,6 @@
-
 import { useState } from 'react';
 import { Lesson } from '@/types/lesson';
+import { submitQuizAttempt } from '@/services/lessonService';
 
 // TTS function
 function speakText(text: string, lang: string = 'es-ES') {
@@ -22,21 +22,42 @@ function normalizeText(text: string): string {
 
 interface ReverseQuizProps {
     lesson: Lesson;
+    sessionId: number; // Added sessionId prop
     onBackToMenu: () => void;
     onStartVocabQuiz: () => void;
 }
 
-export default function ReverseQuiz({ lesson, onBackToMenu, onStartVocabQuiz }: ReverseQuizProps) {
+export default function ReverseQuiz({ lesson, sessionId, onBackToMenu, onStartVocabQuiz }: ReverseQuizProps) {
     const [currentQuestion, setCurrentQuestion] = useState<number>(0);
     const [answers, setAnswers] = useState<string[]>(new Array(lesson.quiz.vocab_matching.length).fill(""));
     const [showResult, setShowResult] = useState<boolean>(false);
     const [isComplete, setIsComplete] = useState<boolean>(false);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // Added for database submission
 
     const totalQuestions = lesson.quiz.vocab_matching.length;
     const currentItem = lesson.quiz.vocab_matching[currentQuestion];
 
-    const checkAnswer = () => {
+    const checkAnswer = async () => { // Made async for database submission
+        setIsSubmitting(true);
         setShowResult(true);
+
+        const correct = isCorrect();
+
+        // Submit to database
+        try {
+            await submitQuizAttempt({
+                session_id: sessionId,
+                question_text: currentItem.target,
+                user_answer: answers[currentQuestion] || '',
+                correct_answer: currentItem.native,
+                is_correct: correct
+            });
+        } catch (error) {
+            console.error('Failed to submit quiz attempt:', error);
+            // Continue with quiz even if submission fails
+        }
+
+        setIsSubmitting(false);
     };
 
     const nextQuestion = () => {
@@ -142,9 +163,9 @@ export default function ReverseQuiz({ lesson, onBackToMenu, onStartVocabQuiz }: 
                         placeholder="Enter English translation..."
                         value={answers[currentQuestion] || ""}
                         onChange={(e) => updateCurrentAnswer(e.target.value)}
-                        disabled={showResult}
+                        disabled={showResult || isSubmitting} // Added isSubmitting check
                         onKeyPress={(e) => {
-                            if (e.key === 'Enter' && !showResult && answers[currentQuestion]?.trim()) {
+                            if (e.key === 'Enter' && !showResult && !isSubmitting && answers[currentQuestion]?.trim()) {
                                 checkAnswer();
                             }
                         }}
@@ -192,10 +213,10 @@ export default function ReverseQuiz({ lesson, onBackToMenu, onStartVocabQuiz }: 
                     {!showResult ? (
                         <button
                             onClick={checkAnswer}
-                            disabled={!answers[currentQuestion]?.trim()}
+                            disabled={!answers[currentQuestion]?.trim() || isSubmitting} // Added isSubmitting check
                             className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Check Answer
+                            {isSubmitting ? 'Submitting...' : 'Check Answer'}
                         </button>
                     ) : (
                         <button

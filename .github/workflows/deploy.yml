@@ -4,24 +4,43 @@ on:
     branches: [ main ]
 
 jobs:
+  # Check which files changed
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.changes.outputs.frontend }}
+      backend: ${{ steps.changes.outputs.backend }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dorny/paths-filter@v2
+      id: changes
+      with:
+        filters: |
+          frontend:
+            - 'Customized-Language-Lesson-Generator-front/**'
+          backend:
+            - 'linguapersonal-backend/**'
+
   deploy-frontend:
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '18'
-        
+
     - name: Install dependencies
       working-directory: ./Customized-Language-Lesson-Generator-front
       run: npm install
-      
+
     - name: Build and export
       working-directory: ./Customized-Language-Lesson-Generator-front
       run: npm run build
-      
+
     - name: Deploy to S3
       run: |
         aws s3 sync ./Customized-Language-Lesson-Generator-front/out/ s3://${{ secrets.AWS_S3_BUCKET }} --delete
@@ -31,28 +50,30 @@ jobs:
         AWS_DEFAULT_REGION: us-east-1
 
   deploy-backend:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-2
-        
+
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
-      
+
     - name: Build and push Docker image
       working-directory: ./linguapersonal-backend
       run: |
         docker build -t linguapersonal-backend .
         docker tag linguapersonal-backend:latest 842676004746.dkr.ecr.us-east-2.amazonaws.com/linguapersonal-backend:latest
         docker push 842676004746.dkr.ecr.us-east-2.amazonaws.com/linguapersonal-backend:latest
-        
+
     - name: Update ECS service
       run: |
         aws ecs update-service --cluster linguapersonal-cluster --service linguapersonal-backend-task-service-vc5ef0pu --force-new-deployment --region us-east-2

@@ -1,7 +1,6 @@
-// REPLACE: src/components/FillBlankQuiz.tsx
-
 import { useState } from 'react';
 import { Lesson, VocabItem } from '@/types/lesson';
+import { submitQuizAttempt } from '@/services/lessonService';
 
 // TTS function
 function speakText(text: string, lang: string = 'es-ES') {
@@ -43,22 +42,43 @@ function createFillBlank(sentence: string, vocabList: VocabItem[]) {
 
 interface FillBlankQuizProps {
     lesson: Lesson;
+    sessionId: number; // Added sessionId prop
     onBackToMenu: () => void;
     onStartReverseQuiz: () => void;
 }
 
-export default function FillBlankQuiz({ lesson, onBackToMenu, onStartReverseQuiz }: FillBlankQuizProps) {
+export default function FillBlankQuiz({ lesson, sessionId, onBackToMenu, onStartReverseQuiz }: FillBlankQuizProps) {
     const [currentQuestion, setCurrentQuestion] = useState<number>(0);
     const [answers, setAnswers] = useState<string[]>(new Array(lesson.quiz.mini_translations.length).fill(""));
     const [showResult, setShowResult] = useState<boolean>(false);
     const [isComplete, setIsComplete] = useState<boolean>(false);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // Added for database submission
 
     const totalQuestions = lesson.quiz.mini_translations.length;
     const currentItem = lesson.quiz.mini_translations[currentQuestion];
     const currentFillBlank = createFillBlank(currentItem.target, lesson.vocabulary);
 
-    const checkAnswer = () => {
+    const checkAnswer = async () => { // Made async for database submission
+        setIsSubmitting(true);
         setShowResult(true);
+
+        const correct = isCorrect();
+
+        // Submit to database
+        try {
+            await submitQuizAttempt({
+                session_id: sessionId,
+                question_text: currentItem.native,
+                user_answer: answers[currentQuestion] || '',
+                correct_answer: currentFillBlank.answer,
+                is_correct: correct
+            });
+        } catch (error) {
+            console.error('Failed to submit quiz attempt:', error);
+            // Continue with quiz even if submission fails
+        }
+
+        setIsSubmitting(false);
     };
 
     const nextQuestion = () => {
@@ -185,9 +205,9 @@ export default function FillBlankQuiz({ lesson, onBackToMenu, onStartReverseQuiz
                         placeholder="Fill in the blank..."
                         value={answers[currentQuestion] || ""}
                         onChange={(e) => updateCurrentAnswer(e.target.value)}
-                        disabled={showResult}
+                        disabled={showResult || isSubmitting} // Added isSubmitting check
                         onKeyPress={(e) => {
-                            if (e.key === 'Enter' && !showResult && answers[currentQuestion]?.trim()) {
+                            if (e.key === 'Enter' && !showResult && !isSubmitting && answers[currentQuestion]?.trim()) {
                                 checkAnswer();
                             }
                         }}
@@ -243,10 +263,10 @@ export default function FillBlankQuiz({ lesson, onBackToMenu, onStartReverseQuiz
                     {!showResult ? (
                         <button
                             onClick={checkAnswer}
-                            disabled={!answers[currentQuestion]?.trim()}
+                            disabled={!answers[currentQuestion]?.trim() || isSubmitting} // Added isSubmitting check
                             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Check Answer
+                            {isSubmitting ? 'Submitting...' : 'Check Answer'}
                         </button>
                     ) : (
                         <button
