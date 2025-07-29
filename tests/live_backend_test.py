@@ -9,7 +9,7 @@ import time
 import random
 from datetime import datetime
 
-# Your live backend URL
+# live backend URL
 BASE_URL = "http://18.216.241.178:8000"
 
 
