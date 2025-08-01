@@ -240,4 +240,4 @@ python tests/live_backend_test.py
 
 **Built with ❤️ for language learners worldwide**
 
-[Live Demo](http://linguapersonal-frontend-swift.s3-website.us-east-2.amazonaws.com/) | [API Documentation](http://3.144.210.134:8000/docs)
+[Live Demo](http://linguapersonal-frontend-swift.s3-website.us-east-2.amazonaws.com/) | [API Documentation](http://18.216.241.178:8000/docs)
