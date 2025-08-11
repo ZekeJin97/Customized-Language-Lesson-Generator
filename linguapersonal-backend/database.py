@@ -1,4 +1,4 @@
-# database.py - Optimized version
+# database.py - Complete file with 2FA support
 import os
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, Text, ForeignKey, Index
 from sqlalchemy.ext.declarative import declarative_base
@@ -13,11 +13,11 @@ DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:password@localho
 engine = create_engine(
     DATABASE_URL,
     poolclass=QueuePool,
-    pool_size=10,              # Number of connections to maintain
-    max_overflow=20,           # Additional connections beyond pool_size
-    pool_pre_ping=True,        # Validates connections before use
-    pool_recycle=3600,         # Recycle connections after 1 hour
-    echo=False,                # Set to True for SQL debugging
+    pool_size=10,  # Number of connections to maintain
+    max_overflow=20,  # Additional connections beyond pool_size
+    pool_pre_ping=True,  # Validates connections before use
+    pool_recycle=3600,  # Recycle connections after 1 hour
+    echo=False,  # Set to True for SQL debugging
     connect_args={
         "connect_timeout": 10,  # Connection timeout in seconds
         "application_name": "linguapersonal_api"
@@ -28,17 +28,17 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
-# User model with optimized indexing
+# User model with 2FA support
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(255), unique=True, index=True)  # Added length limit
-    password_hash = Column(String(255))  # Added length limit
+    email = Column(String(255), unique=True, index=True)
+    password_hash = Column(String(255))
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    last_login = Column(DateTime, index=True)  # Added index for performance
+    last_login = Column(DateTime, index=True)
+    two_fa_enabled = Column(Boolean, default=True)  # NEW: 2FA setting
 
-    # Explicit indexes for better query performance
     __table_args__ = (
         Index('idx_user_email_unique', 'email', unique=True),
         Index('idx_user_last_login', 'last_login'),
@@ -46,9 +46,29 @@ class User(Base):
 
     sessions = relationship("LearningSession", back_populates="user", lazy="select")
     progress = relationship("UserProgress", back_populates="user", lazy="select")
+    verification_codes = relationship("EmailVerificationCode", back_populates="user", lazy="select")
 
 
-# Learning session model
+# NEW: Email verification codes for 2FA
+class EmailVerificationCode(Base):
+    __tablename__ = "email_verification_codes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    code = Column(String(6))  # 6-digit verification code
+    expires_at = Column(DateTime, index=True)
+    used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index('idx_verification_user_used', 'user_id', 'used'),
+        Index('idx_verification_expires', 'expires_at'),
+    )
+
+    user = relationship("User", back_populates="verification_codes")
+
+
+# Learning session model (unchanged)
 class LearningSession(Base):
     __tablename__ = "learning_sessions"
 
@@ -59,7 +79,6 @@ class LearningSession(Base):
     started_at = Column(DateTime, default=datetime.utcnow, index=True)
     completed_at = Column(DateTime)
 
-    # Composite index for common queries
     __table_args__ = (
         Index('idx_session_user_lang', 'user_id', 'language'),
         Index('idx_session_user_started', 'user_id', 'started_at'),
@@ -69,7 +88,7 @@ class LearningSession(Base):
     attempts = relationship("QuestionAttempt", back_populates="session", lazy="select")
 
 
-# Question attempt model
+# Question attempt model (unchanged)
 class QuestionAttempt(Base):
     __tablename__ = "question_attempts"
 
@@ -81,7 +100,6 @@ class QuestionAttempt(Base):
     is_correct = Column(Boolean, index=True)
     attempt_time = Column(DateTime, default=datetime.utcnow, index=True)
 
-    # Index for finding mistakes by user
     __table_args__ = (
         Index('idx_attempt_session_correct', 'session_id', 'is_correct'),
     )
@@ -89,7 +107,7 @@ class QuestionAttempt(Base):
     session = relationship("LearningSession", back_populates="attempts")
 
 
-# User progress model
+# User progress model (unchanged)
 class UserProgress(Base):
     __tablename__ = "user_progress"
 
@@ -100,7 +118,6 @@ class UserProgress(Base):
     correct_answers = Column(Integer, default=0)
     last_studied = Column(DateTime, default=datetime.utcnow, index=True)
 
-    # Composite index for user progress queries
     __table_args__ = (
         Index('idx_progress_user_lang', 'user_id', 'language', unique=True),
     )
@@ -118,7 +135,7 @@ def create_tables():
         raise
 
 
-# Optimized database session with better error handling
+# Database session with error handling
 def get_db():
     db = SessionLocal()
     try:
