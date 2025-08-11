@@ -1,4 +1,4 @@
-# main.py - Complete file with 2FA support
+# main.py - Complete file with 2FA support and database migration
 import os
 import logging
 import json
@@ -19,9 +19,11 @@ import bcrypt
 import jwt
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import text
 
 # Import our database models
-from database import get_db, create_tables, User, LearningSession, QuestionAttempt, UserProgress, EmailVerificationCode
+from database import get_db, create_tables, User, LearningSession, QuestionAttempt, UserProgress, EmailVerificationCode, \
+    engine
 
 # ─── Setup ──────────────────────────────────────────────
 load_dotenv()
@@ -45,8 +47,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Create database tables on startup
+
+# Database migration function
+def run_migrations():
+    """Run database migrations for existing tables"""
+    try:
+        logger.info("🔄 Running database migrations...")
+
+        # Add the two_fa_enabled column if it doesn't exist
+        with engine.connect() as connection:
+            try:
+                connection.execute(
+                    text("ALTER TABLE users ADD COLUMN IF NOT EXISTS two_fa_enabled BOOLEAN DEFAULT TRUE;"))
+                connection.commit()
+                logger.info("✅ Added two_fa_enabled column to users table")
+            except Exception as e:
+                logger.warning(f"⚠️ Column migration warning: {e}")
+
+        logger.info("✅ Database migrations completed")
+
+    except Exception as e:
+        logger.error(f"❌ Migration error: {e}")
+
+
+# Create database tables and run migrations on startup
 create_tables()
+run_migrations()
 
 # JWT Settings
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-this")
