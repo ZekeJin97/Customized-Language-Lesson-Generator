@@ -1,6 +1,6 @@
 import { Lesson } from '@/types/lesson';
 
-const API_BASE_URL = 'http://18.216.241.178:8000';
+const API_BASE_URL = 'http://18.119.11.174:8000';
 
 export interface AuthResponse {
   access_token: string;
