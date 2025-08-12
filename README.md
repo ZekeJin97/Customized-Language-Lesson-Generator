@@ -10,6 +10,18 @@ A personalized language learning app that generates custom Spanish lessons and q
 ### Quiz System
 ![Quiz System](Demo2.png)
 
+# 🧠 LinguaPersonal
+A personalized language learning app that generates custom Spanish lessons and quizzes from user prompts using OpenAI's GPT. Built with ❤️ for language learners who want personalized content that actually matters to them.
+#### Check it out: http://linguapersonal-frontend-swift.s3-website.us-east-2.amazonaws.com
+
+## Screenshots
+
+### Main Interface
+![Main Interface](Demo1.png)
+
+### Quiz System
+![Quiz System](Demo2.png)
+
 ## 🚀 Features
 
 ### 🎯 **Smart Learning Experience**
@@ -23,11 +35,13 @@ A personalized language learning app that generates custom Spanish lessons and q
 - **Fill-in-the-Blanks**: Complete Spanish sentences in context
 - **Smart Scoring**: Accent-tolerant answers with immediate feedback
 
-### 👤 **User Management & Progress**
-- **Secure Authentication**: JWT-based user accounts with registration/login
+### 🔐 **Enhanced Security & User Management**
+- **Two-Factor Authentication (2FA)**: Email-based verification codes for secure login
+- **JWT Security**: Secure token-based authentication with auto-refresh
+- **Password Protection**: bcrypt encryption with secure password requirements
 - **Progress Tracking**: Detailed statistics on quiz performance and accuracy
 - **Mistake Review**: Review and practice your incorrect answers with audio pronunciation
-- **Session Management**: Each lesson generates unique learning sessions
+- **Session Management**: Each lesson generates unique learning sessions with full audit trail
 
 ### ✨ **Premium Experience**
 - 🌙 **Dark Theme** – Easy on the eyes for extended study sessions
@@ -35,6 +49,7 @@ A personalized language learning app that generates custom Spanish lessons and q
 - ⚡ **Real-Time Feedback** – Instant scoring with visual feedback
 - 📱 **Responsive Design** – Works seamlessly on desktop and mobile
 - 🎨 **Clean UI** – Split-screen design keeps vocabulary always visible
+- 📧 **Email Integration** – Automated verification codes and notifications
 
 ## 🛠 Tech Stack
 
@@ -43,19 +58,23 @@ A personalized language learning app that generates custom Spanish lessons and q
 - **Styling**: Tailwind CSS with custom dark theme
 - **State Management**: React hooks with context
 - **Audio**: Web Speech API for pronunciation
-- **Testing**: React Testing Library + Jest
+- **Testing**: React Testing Library + Jest (24 comprehensive tests)
+- **Authentication**: JWT with 2FA verification flow
 
 ### **Backend** 
 - **Framework**: FastAPI with Python 3.10+
 - **Database**: PostgreSQL with SQLAlchemy ORM
-- **Authentication**: JWT tokens with bcrypt password hashing
+- **Authentication**: JWT tokens with 2FA email verification
+- **Security**: bcrypt password hashing + email-based 2FA codes
 - **AI Integration**: OpenAI GPT-3.5-turbo for lesson generation
+- **Email Service**: Automated verification code delivery
 - **Deployment**: Docker containerization
 - **Testing**: pytest with comprehensive test coverage
 
 ### **Infrastructure**
 - **Deployment**: AWS EC2 with automated CI/CD
 - **Database**: PostgreSQL hosted on AWS RDS
+- **Email Service**: SMTP integration for 2FA codes
 - **API Documentation**: Interactive Swagger/OpenAPI docs
 - **Monitoring**: Comprehensive logging and error tracking
 
@@ -66,6 +85,7 @@ A personalized language learning app that generates custom Spanish lessons and q
 - Next.js
 - PostgreSQL database
 - OpenAI API key
+- SMTP server for email (Gmail, SendGrid, etc.)
 
 ### **Environment Setup**
 
@@ -76,6 +96,10 @@ Create `.env` files:
 DATABASE_URL=postgresql://user:password@localhost:5432/linguapersonal
 OPENAI_API_KEY=your_openai_api_key_here
 JWT_SECRET_KEY=your_secure_secret_key
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
 ```
 
 **Frontend (.env.local):**
@@ -105,10 +129,18 @@ npm run dev
 
 ### **Getting Started**
 1. **Create Account**: Register with email and secure password
-2. **Generate Lesson**: Enter any topic (e.g., "ordering coffee", "job interview", "at the doctor")
-3. **Study Content**: Review AI-generated vocabulary, grammar notes, and example sentences
-4. **Take Quizzes**: Choose from three different quiz types to test your knowledge
-5. **Track Progress**: Monitor your accuracy and review mistakes for focused practice
+2. **Verify Email**: Check your email for a 6-digit verification code
+3. **Secure Login**: Use email + password + 2FA code for future logins
+4. **Generate Lesson**: Enter any topic (e.g., "ordering coffee", "job interview", "at the doctor")
+5. **Study Content**: Review AI-generated vocabulary, grammar notes, and example sentences
+6. **Take Quizzes**: Choose from three different quiz types to test your knowledge
+7. **Track Progress**: Monitor your accuracy and review mistakes for focused practice
+
+### **Two-Factor Authentication Flow**
+```
+Registration → Email verification → Account created
+Login → Email + Password → 2FA code sent → Code verification → Access granted
+```
 
 ### **Example Learning Flow**
 ```
@@ -128,15 +160,16 @@ Immediate feedback + progress tracking + mistake review
 ┌─────────────────┐    HTTPS    ┌──────────────────┐    OpenAI API    ┌─────────────┐
 │   Next.js App   │   Requests  │   FastAPI        │     Requests     │   GPT-3.5   │
 │   (Frontend)    │ ──────────► │   (Backend)      │ ──────────────► │   Turbo     │
-│   Tailwind CSS  │             │   + PostgreSQL   │                  │             │
+│   + 2FA Flow    │             │   + PostgreSQL   │                  │             │
 └─────────────────┘ ◄────────── └──────────────────┘ ◄────────────── └─────────────┘
-        │                               │
-        │                               │
-   ┌────────────┐                ┌─────────────┐
-   │   User     │                │   Database  │
-   │ Management │                │   - Users   │
-   │ + Audio    │                │   - Sessions│
-   └────────────┘                │   - Progress│
+        │                               │                               
+        │                               │                               
+   ┌────────────┐                ┌─────────────┐              ┌───────────────┐
+   │   User     │                │   Database  │              │  Email Server │
+   │ Management │                │   - Users   │              │  (2FA Codes)  │
+   │ + Audio    │                │   - Sessions│ ◄──────────► │  - SMTP       │
+   └────────────┘                │   - Progress│              │  - Verification│
+                                 │   - 2FA Codes│             └───────────────┘
                                  └─────────────┘
 ```
 
@@ -150,7 +183,7 @@ linguapersonal/
 │   │   │   ├── page.tsx         # Main application component
 │   │   │   └── layout.tsx       # App layout with authentication
 │   │   ├── components/
-│   │   │   ├── AuthForm.tsx     # Login/register component
+│   │   │   ├── AuthForm.tsx     # Login/register with 2FA
 │   │   │   ├── ProtectedRoute.tsx# Authentication wrapper
 │   │   │   ├── LessonInput.tsx  # Topic input screen
 │   │   │   ├── VocabularyDisplay.tsx # Vocab + example sentences
@@ -160,84 +193,117 @@ linguapersonal/
 │   │   │   ├── ReverseQuiz.tsx  # Spanish to English quiz
 │   │   │   └── MistakesReview.tsx# Review incorrect answers
 │   │   ├── services/
-│   │   │   └── lessonService.ts # API integration + auth
+│   │   │   └── lessonService.ts # API integration + auth + 2FA
 │   │   └── types/
 │   │       └── lesson.ts        # TypeScript interfaces
 │   ├── package.json
 │   └── tailwind.config.js
 ├── backend/                      # FastAPI backend application  
-│   ├── main.py                  # FastAPI app + API routes
+│   ├── main.py                  # FastAPI app + API routes + 2FA
 │   ├── database.py              # SQLAlchemy models + DB setup
 │   ├── requirements.txt         # Python dependencies
 │   ├── Dockerfile              # Docker containerization
 │   └── .env                    # Environment variables
 ├── tests/                       # Comprehensive test suite
+│   ├── frontend/                # Frontend tests (24 tests)
+│   │   ├── AuthForm.test.tsx    # Authentication flow tests (15 tests)
+│   │   ├── VocabQuiz.test.tsx   # Quiz functionality tests (8 tests)
+│   │   ├── AuthService.test.ts  # Service layer tests (1 test)
+│   │   ├── jest.config.js       # Jest configuration
+│   │   └── jest.setup.js        # Test environment setup
+│   └── backend/                 # Backend tests
+│       └── backend_full_test.py # Complete API and database tests
 └── README.md
 ```
 
-## 🧪 Testing
+## 🧪 Comprehensive Testing Suite
 
-### **Automated Backend Testing**
+### **Frontend Testing **
+
+**AuthForm Tests :**
 ```bash
-# Run comprehensive test suite
-pytest tests/backend/ -v
+cd tests/frontend
+npm test AuthForm.test.tsx
+```
+- ✅ Registration and login flows
+- ✅ 2FA verification code handling
+- ✅ Form validation and error states
+- ✅ Loading states and user feedback
+- ✅ Navigation between auth steps
+- ✅ Token management and persistence
 
-# Test against live deployment
-python tests/live_backend_test.py
+**VocabQuiz Tests :**
+```bash
+npm test VocabQuiz.test.tsx
+```
+- ✅ Quiz question rendering and navigation
+- ✅ Answer validation and scoring
+- ✅ Progress tracking and completion
+- ✅ Text normalization (accent handling)
+
+**AuthService Tests :**
+```bash
+npm test AuthService.test.ts
+```
+- ✅ Token storage and authentication state
+
+### **Backend Testing (Comprehensive Coverage)**
+
+```bash
+cd tests/backend
+python backend_full_test.py
 ```
 
-### **Test Coverage**
-- ✅ Authentication & JWT security
-- ✅ OpenAI API integration  
-- ✅ Database operations & data integrity
-- ✅ Quiz functionality & scoring
-- ✅ Progress tracking & mistake review
-- ✅ Frontend component interactions
-- ✅ Complete user workflows
+**Authentication & Security:**
+- ✅ Password hashing and verification
+- ✅ JWT token creation and validation
+- ✅ 2FA code generation and verification
+- ✅ Email verification flow
 
-## 🌟 Key Achievements
+**Database Operations:**
+- ✅ User registration and management
+- ✅ Learning session creation
+- ✅ Quiz attempt tracking
+- ✅ Progress statistics
 
-### **AI-Powered Learning**
-- Generates contextually relevant vocabulary for any topic
-- Creates practical grammar explanations tailored to user input
-- Produces natural, conversational example sentences
+**API Endpoints:**
+- ✅ Health checks and monitoring
+- ✅ Complete authentication flow
+- ✅ Lesson generation with OpenAI
+- ✅ Quiz submission and scoring
+- ✅ Error handling and edge cases
 
-### **Robust User Experience**
-- Secure user authentication with JWT tokens
-- Persistent progress tracking across sessions
-- Audio pronunciation for enhanced learning
-- Responsive design for all devices
+### **Test Execution**
+```bash
+# Run all frontend tests (24 tests, ~9.8s)
+cd tests/frontend && npm test
 
-### **Production-Ready Architecture**
-- Scalable FastAPI backend with PostgreSQL
-- Comprehensive error handling and logging
-- Docker containerization for easy deployment
-- Automated testing with high coverage
+# Run all backend tests
+cd tests/backend && python backend_full_test.py
+
+# Frontend test coverage report
+cd tests/frontend && npm run test:coverage
+```
 
 ## 🔮 Roadmap
 
-### Complete MVP) ✅
+### **✅ Complete MVP (DONE)**
 - ✅ Custom lesson generation with OpenAI
 - ✅ Three quiz types with smart scoring
-- ✅ User authentication and progress tracking
-- ✅ Mistake review system with audio
+- ✅ User authentication with 2FA email verification
+- ✅ Progress tracking and mistake review system
 - ✅ Responsive dark theme UI
 - ✅ Production deployment on AWS
+- ✅ Comprehensive test suite 
 
-### Enhanced Features **
+### **🔄 Enhanced Features (Next)**
 - 🔄 Spaced repetition algorithm for optimal learning
 - 🔄 Difficulty level selection (beginner/intermediate/advanced)
 - 🔄 Lesson favorites and bookmark system
 - 🔄 Voice recognition for pronunciation practice
 - 🔄 Multi-language support beyond Spanish
-
-## 📈 Performance Metrics
-
-- **Lesson Generation**: 4-6 seconds average response time
-- **Quiz Accuracy**: Smart normalization handles accents and case variations  
-- **User Retention**: Progress tracking encourages continued learning
-- **Scalability**: Docker deployment supports horizontal scaling
+- 🔄 Mobile app development (React Native)
 
 **Built with ❤️ for language learners worldwide**
 
-[Live Demo](http://linguapersonal-frontend-swift.s3-website.us-east-2.amazonaws.com/) | [API Documentation](http://18.216.241.178:8000/docs)
+[Live Demo](http://linguapersonal-frontend-swift.s3-website.us-east-2.amazonaws.com/) | [API Documentation](http://3.21.12.136:8000/docs)
