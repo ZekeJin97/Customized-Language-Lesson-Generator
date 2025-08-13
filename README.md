@@ -188,7 +188,7 @@ linguapersonal/
 │   └── tailwind.config.js
 ├── backend/                      # FastAPI backend application  
 │   ├── main.py                  # FastAPI app + API routes + 2FA
-│   ├── database.py              # SQLAlchemy models + DB setup
+│   ├── database.py              # DB setup
 │   ├── requirements.txt         # Python dependencies
 │   ├── Dockerfile              # Docker containerization
 │   └── .env                    # Environment variables
