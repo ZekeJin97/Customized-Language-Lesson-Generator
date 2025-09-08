@@ -10,18 +10,6 @@ A personalized language learning app that generates custom Spanish lessons and q
 ### Quiz System
 ![Quiz System](Demo2.png)
 
-# 🧠 LinguaPersonal
-A personalized language learning app that generates custom Spanish lessons and quizzes from user prompts using OpenAI's GPT. Built with ❤️ for language learners who want personalized content that actually matters to them.
-#### Check it out: http://linguapersonal-frontend-swift.s3-website.us-east-2.amazonaws.com
-
-## Screenshots
-
-### Main Interface
-![Main Interface](Demo1.png)
-
-### Quiz System
-![Quiz System](Demo2.png)
-
 ## 🚀 Features
 
 ### 🎯 **Smart Learning Experience**
@@ -200,7 +188,7 @@ linguapersonal/
 │   └── tailwind.config.js
 ├── backend/                      # FastAPI backend application  
 │   ├── main.py                  # FastAPI app + API routes + 2FA
-│   ├── database.py              # SQLAlchemy models + DB setup
+│   ├── database.py              # DB setup
 │   ├── requirements.txt         # Python dependencies
 │   ├── Dockerfile              # Docker containerization
 │   └── .env                    # Environment variables
