@@ -1,6 +1,7 @@
 import { Lesson } from '@/types/lesson';
 
-const API_BASE_URL = 'http://18.216.160.127:8000';
+const API_BASE_URL = 'http://lingua-backend-alb-1866016173.us-east-2.elb.amazonaws.com';
+
 
 export interface AuthResponse {
   access_token: string;
